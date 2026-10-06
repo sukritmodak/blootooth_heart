@@ -54,7 +54,7 @@ def process(line):
         if m: state["sounds"]=int(m.group(1))
         m=re.search(r"S1-S2 pairs\s*=\s*(\d+)",line,re.I)
         if m: state["beats"]=int(m.group(1))
-        m=re.search(r"BPM\s*=\s*([\d.]+)",line,re.I)
+        m=re.search(r"^BPM\s*=\s*([\d.]+)\s*$",line,re.I)
         if m: state["bpm"]=float(m.group(1)); state["updated"]=time.time()
         m=re.search(r"Difference\s*=\s*([+-]?[\d.]+)",line,re.I)
         if m: state["diff"]=float(m.group(1))
