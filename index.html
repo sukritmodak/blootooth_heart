@@ -89,7 +89,16 @@ function parseLine(line){
  if((m=line.match(/Sound #\s*(\d+)/i))) state.totalSounds=Number(m[1]);
  if((m=line.match(/Total sounds\s*=\s*(\d+)/i))) state.sounds=Number(m[1]);
  if((m=line.match(/S1-S2 pairs\s*=\s*(\d+)/i))) state.beats=Number(m[1]);
- if((m=line.match(/^BPM\s*=\s*(\d+(?:\.\d+)?)\s*$/i))) {\n  const measured=Number(m[1]);\n  if(Number.isFinite(measured)) { state.bpm=measured; history.push(measured); if(history.length>40) history.shift(); state.updated=Date.now(); lastBpmTimestamp=state.updated; }\n}
+ if((m=line.match(/^BPM\s*=\s*(\d+(?:\.\d+)?)\s*$/i))) {
+  const measured=Number(m[1]);
+  if(Number.isFinite(measured)) {
+    state.bpm=measured;
+    history.push(measured);
+    if(history.length>40) history.shift();
+    state.updated=Date.now();
+    lastBpmTimestamp=state.updated;
+  }
+}
  if((m=line.match(/Difference\s*=\s*([+-]?[\d.]+)/i))) state.diff=Number(m[1]);
  render();
 }
@@ -99,7 +108,15 @@ async function poll(){
   if(!r.ok)throw new Error();
   const d=await r.json(); dot.classList.add('ok');connection.textContent='Bluetooth bridge connected';
   if(d.lines) d.lines.forEach(parseLine);
-  if(d.state){\n    const serverBpm=d.state.bpm;\n    state={...state,...d.state};\n    // Never replace a measured BPM with the 72 BPM reference value.\n    if(typeof serverBpm!=="number" || !Number.isFinite(serverBpm)) state.bpm=null;\n    render();\n  }
+  if(d.state){
+    const serverBpm=d.state.bpm;
+    state={...state,...d.state};
+    // Only a numeric BPM received from the ESP32 is a measured BPM.
+    if(typeof serverBpm!=="number" || !Number.isFinite(serverBpm)) {
+      state.bpm=null;
+    }
+    render();
+  }
  }catch(e){dot.classList.remove('ok');connection.textContent='Bridge offline'}
 }
 document.getElementById('clear').onclick=()=>terminal.textContent='';
