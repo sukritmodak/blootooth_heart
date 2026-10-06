@@ -1,0 +1,43 @@
+name: Build Heart Monitor EXE
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyserial pyinstaller
+
+      - name: Build HeartMonitor.exe
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed --name HeartMonitor launcher/HeartMonitor.py
+          copy index.html dist\index.html
+
+      - name: Package application
+        run: |
+          mkdir HeartMonitor-Windows
+          copy dist\HeartMonitor.exe HeartMonitor-Windows\HeartMonitor.exe
+          copy dist\index.html HeartMonitor-Windows\index.html
+          Compress-Archive -Path HeartMonitor-Windows\* -DestinationPath HeartMonitor-Windows.zip
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HeartMonitor-Windows
+          path: HeartMonitor-Windows.zip
+          retention-days: 30
