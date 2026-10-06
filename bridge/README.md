@@ -1,0 +1,1 @@
+# Bluetooth Bridge\n\nRun `python heart_bridge.py COM7` after pairing the ESP32 with Windows. Replace COM7 with the Bluetooth outgoing COM port assigned to ESP32-HEART.\n
