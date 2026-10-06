@@ -3,1251 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>ESP32 Heart Sound Monitor</title>
-
 <style>
-:root{
-    --bg:#081018;
-    --panel:#101c28;
-    --panel2:#142536;
-    --text:#eef5fb;
-    --muted:#91a5b7;
-    --accent:#38d39f;
-    --danger:#ff6176;
-    --line:#243747;
-}
-
-*{
-    box-sizing:border-box;
-}
-
-body{
-    margin:0;
-    background:linear-gradient(145deg,#071019,#0c1721);
-    color:var(--text);
-    font-family:Inter,Segoe UI,Arial,sans-serif;
-}
-
-/* =========================
-   HEADER
-========================= */
-
-header{
-    padding:22px 28px;
-    border-bottom:1px solid var(--line);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:20px;
-}
-
-.brand{
-    display:flex;
-    align-items:center;
-    gap:14px;
-}
-
-.heart{
-    font-size:34px;
-}
-
-.title{
-    font-size:23px;
-    font-weight:700;
-}
-
-.subtitle{
-    color:var(--muted);
-    font-size:13px;
-    margin-top:3px;
-}
-
-.status{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    padding:9px 13px;
-    border:1px solid var(--line);
-    border-radius:20px;
-    background:#0c1822;
-    font-size:13px;
-}
-
-.dot{
-    width:9px;
-    height:9px;
-    border-radius:50%;
-    background:var(--danger);
-}
-
-.dot.ok{
-    background:var(--accent);
-    box-shadow:0 0 12px #38d39f;
-}
-
-/* =========================
-   MAIN
-========================= */
-
-main{
-    max-width:1250px;
-    margin:0 auto;
-    padding:25px;
-}
-
-/* =========================
-   CARDS
-========================= */
-
-.cards{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:15px;
-}
-
-.card{
-    background:rgba(16,28,40,.92);
-    border:1px solid var(--line);
-    border-radius:15px;
-    padding:20px;
-    min-height:125px;
-}
-
-.label{
-    color:var(--muted);
-    font-size:13px;
-}
-
-.value{
-    font-size:37px;
-    font-weight:750;
-    margin-top:13px;
-    letter-spacing:-1px;
-}
-
-.unit{
-    font-size:14px;
-    color:var(--muted);
-    font-weight:500;
-}
-
-/* ORIGINAL BPM DISPLAY */
-
-.bpm{
-    font-size:52px;
-}
-
-.bpm.good{
-    color:var(--accent);
-}
-
-/* =========================
-   GRID
-========================= */
-
-.grid{
-    display:grid;
-    grid-template-columns:1.45fr .9fr;
-    gap:15px;
-    margin-top:15px;
-}
-
-.panel{
-    background:rgba(16,28,40,.92);
-    border:1px solid var(--line);
-    border-radius:15px;
-    padding:20px;
-}
-
-.panel h2{
-    font-size:16px;
-    margin:0 0 14px;
-}
-
-/* =========================
-   METRICS
-========================= */
-
-.metric{
-    display:flex;
-    justify-content:space-between;
-    border-bottom:1px solid var(--line);
-    padding:11px 0;
-}
-
-.metric:last-child{
-    border:0;
-}
-
-/* =========================
-   TERMINAL
-========================= */
-
-.terminal{
-    height:355px;
-    overflow:auto;
-    background:#071019;
-    border-radius:10px;
-    border:1px solid #1b2a37;
-    padding:13px;
-    font-family:Consolas,monospace;
-    font-size:13px;
-    line-height:1.65;
-    white-space:pre-wrap;
-}
-
-/* =========================
-   CONTROLS
-========================= */
-
-.controls{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-bottom:14px;
-}
-
-.source-panel{
-    margin-bottom:15px;
-}
-
-.source-row{
-    display:flex;
-    gap:10px;
-}
-
-.source-row input{
-    flex:1;
-    min-width:0;
-    border:1px solid var(--line);
-    background:#071019;
-    color:var(--text);
-    padding:11px 13px;
-    border-radius:9px;
-    font:inherit;
-}
-
-button{
-    border:1px solid var(--line);
-    background:#172736;
-    color:var(--text);
-    padding:10px 15px;
-    border-radius:9px;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#203648;
-}
-
-/* =========================
-   CHART
-========================= */
-
-canvas{
-    width:100%;
-    height:180px;
-    background:#071019;
-    border-radius:10px;
-    border:1px solid #1b2a37;
-}
-
-/* =========================
-   NOTE / PILL
-========================= */
-
-.note{
-    margin-top:15px;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1.5;
-}
-
-.pill{
-    display:inline-block;
-    padding:4px 8px;
-    border-radius:8px;
-    background:#173328;
-    color:#8ce6c5;
-    font-size:11px;
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-
-@media(max-width:900px){
-
-    .cards{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .grid{
-        grid-template-columns:1fr;
-    }
-}
-
-@media(max-width:520px){
-
-    header{
-        padding:18px;
-    }
-
-    .cards{
-        grid-template-columns:1fr;
-    }
-
-    main{
-        padding:15px;
-    }
-
-    .value{
-        font-size:31px;
-    }
-
-    .bpm{
-        font-size:45px;
-    }
-
-    .source-row{
-        flex-direction:column;
-    }
-}
+:root{--bg:#081018;--panel:#101c28;--panel2:#142536;--text:#eef5fb;--muted:#91a5b7;--accent:#38d39f;--danger:#ff6176;--line:#243747}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#071019,#0c1721);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+header{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:14px}.heart{font-size:34px}.title{font-size:23px;font-weight:700}.subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.status{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid var(--line);border-radius:20px;background:#0c1822;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--danger)}.dot.ok{background:var(--accent);box-shadow:0 0 12px #38d39f}
+main{max-width:1250px;margin:0 auto;padding:25px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:rgba(16,28,40,.92);border:1px solid var(--line);border-radius:15px;padding:20px;min-height:125px}
+.label{color:var(--muted);font-size:13px}.value{font-size:37px;font-weight:750;margin-top:13px;letter-spacing:-1px}.unit{font-size:14px;color:var(--muted);font-weight:500}
+.bpm{font-size:52px}.bpm.good{color:var(--accent)}
+.grid{display:grid;grid-template-columns:1.45fr .9fr;gap:15px;margin-top:15px}.panel{background:rgba(16,28,40,.92);border:1px solid var(--line);border-radius:15px;padding:20px}
+.panel h2{font-size:16px;margin:0 0 14px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0}.metric:last-child{border:0}
+.terminal{height:355px;overflow:auto;background:#071019;border-radius:10px;border:1px solid #1b2a37;padding:13px;font-family:Consolas,monospace;font-size:13px;line-height:1.65;white-space:pre-wrap}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.source-panel{margin-bottom:15px}.source-row{display:flex;gap:10px}.source-row input{flex:1;min-width:0;border:1px solid var(--line);background:#071019;color:var(--text);padding:11px 13px;border-radius:9px;font:inherit}button{border:1px solid var(--line);background:#172736;color:var(--text);padding:10px 15px;border-radius:9px;cursor:pointer}button:hover{background:#203648}
+canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px solid #1b2a37}
+.note{margin-top:15px;color:var(--muted);font-size:12px;line-height:1.5}.pill{display:inline-block;padding:4px 8px;border-radius:8px;background:#173328;color:#8ce6c5;font-size:11px}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:520px){header{padding:18px}.cards{grid-template-columns:1fr}main{padding:15px}.value{font-size:31px}.source-row{flex-direction:column}}
 </style>
 </head>
-
 <body>
-
-<!-- =========================
-     HEADER
-========================= -->
-
 <header>
-
-    <div class="brand">
-
-        <div class="heart">♥</div>
-
-        <div>
-            <div class="title">
-                ESP32 Heart Sound Monitor
-            </div>
-
-            <div class="subtitle">
-                Bluetooth Classic • S1/S2 detection • Original S1-to-S1 BPM
-            </div>
-        </div>
-
-    </div>
-
-    <div class="status">
-        <span id="dot" class="dot"></span>
-        <span id="connection">
-            Bridge offline
-        </span>
-    </div>
-
+ <div class="brand"><div class="heart">♥</div><div><div class="title">ESP32 Heart Sound Monitor</div><div class="subtitle">Bluetooth Classic • S1/S2 detection • Original S1-to-S1 BPM</div></div></div>
+ <div class="status"><span id="dot" class="dot"></span><span id="connection">Bridge offline</span></div>
 </header>
-
-
 <main>
-
-<!-- =========================
-     LIVE DATA SOURCE
-========================= -->
-
-<section class="panel source-panel">
-
-    <h2>
-        Live Data Source
-    </h2>
-
-    <div class="source-row">
-
-        <input
-            id="apiBase"
-            aria-label="Bridge API URL"
-            placeholder="http://127.0.0.1:8080"
-        >
-
-        <button id="connectBtn">
-            Connect
-        </button>
-
-    </div>
-
-    <div class="note">
-        Hosted website mode: enter the URL of the computer running
-        the Heart Monitor bridge.
-        For the one-click Windows app, the default is
-        <b>http://127.0.0.1:8080</b>.
-    </div>
-
-</section>
-
-
-<!-- =========================
-     MAIN MEASUREMENT CARDS
-========================= -->
-
-<section class="cards">
-
-
-    <!-- ORIGINAL BPM -->
-
-    <div class="card">
-
-        <div class="label">
-            ORIGINAL MEASURED HEART RATE
-        </div>
-
-        <div id="bpm" class="value bpm">
-            -- <span class="unit">BPM</span>
-        </div>
-
-    </div>
-
-
-    <!-- HEARTBEATS -->
-
-    <div class="card">
-
-        <div class="label">
-            HEARTBEATS / 5 SEC
-        </div>
-
-        <div id="beats" class="value">
-            0
-        </div>
-
-    </div>
-
-
-    <!-- SOUNDS -->
-
-    <div class="card">
-
-        <div class="label">
-            SOUNDS / 5 SEC
-        </div>
-
-        <div id="sounds" class="value">
-            0
-        </div>
-
-    </div>
-
-
-    <!-- S1-S2 GAP -->
-
-    <div class="card">
-
-        <div class="label">
-            S1 / S2 GAP
-        </div>
-
-        <div id="gap" class="value">
-            -- <span class="unit">ms</span>
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================
-     TERMINAL + MEASUREMENT
-========================= -->
-
-<section class="grid">
-
-
-    <!-- BLUETOOTH TERMINAL -->
-
-    <div class="panel">
-
-        <h2>
-            Live Bluetooth Messages
-        </h2>
-
-        <div class="controls">
-
-            <button id="clear">
-                Clear terminal
-            </button>
-
-            <span class="pill">
-                ESP32-HEART
-            </span>
-
-        </div>
-
-        <div id="terminal" class="terminal">
-            Waiting for Bluetooth bridge…
-        </div>
-
-    </div>
-
-
-    <!-- CURRENT MEASUREMENT -->
-
-    <div class="panel">
-
-        <h2>
-            Current Measurement
-        </h2>
-
-        <div class="metric">
-            <span>Total sounds</span>
-            <strong id="totalSounds">0</strong>
-        </div>
-
-        <div class="metric">
-            <span>Total heartbeats</span>
-            <strong id="totalBeats">0</strong>
-        </div>
-
-        <div class="metric">
-            <span>Last event</span>
-            <strong id="event">—</strong>
-        </div>
-
-        <div class="metric">
-            <span>Last update</span>
-            <strong id="updated">—</strong>
-        </div>
-
-        <div class="metric">
-            <span>Original measured BPM</span>
-            <strong id="originalBpm">—</strong>
-        </div>
-
-        <div class="note">
-            This is the original BPM calculated from successive
-            S1 sounds by the ESP32. No reference BPM value is used.
-            The USB audio stream remains separate.
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================
-     BPM TREND
-========================= -->
-
-<section class="panel" style="margin-top:15px">
-
-    <h2>
-        BPM Trend
-    </h2>
-
-    <canvas
-        id="chart"
-        width="1000"
-        height="180">
-    </canvas>
-
-</section>
-
+ <section class="panel source-panel">
+  <h2>Live Data Source</h2>
+  <div class="source-row">
+    <input id="apiBase" aria-label="Bridge API URL" placeholder="http://127.0.0.1:8080">
+    <button id="connectBtn">Connect</button>
+  </div>
+  <div class="note">Hosted website mode: enter the URL of the computer running the Heart Monitor bridge. For the one-click Windows app, the default is <b>http://127.0.0.1:8080</b>.</div>
+ </section>
+ <section class="cards">
+  <div class="card"><div class="label">MEASURED HEART RATE</div><div id="bpm" class="SHOWN BELOW">-- <span class="unit">BPM</span></div></div>
+  <div class="card"><div class="label">HEARTBEATS / 5 SEC</div><div id="beats" class="value">0</div></div>
+  <div class="card"><div class="label">SOUNDS / 5 SEC</div><div id="sounds" class="value">0</div></div>
+  <div class="card"><div class="label">S1 / S2 GAP</div><div id="gap" class="value">-- <span class="unit">ms</span></div></div>
+ </section>
+ <section class="grid">
+  <div class="panel">
+   <h2>Live Bluetooth Messages</h2>
+   <div class="controls"><button id="clear">Clear terminal</button><span class="pill">ESP32-HEART</span></div>
+   <div id="terminal" class="terminal">Waiting for Bluetooth bridge…</div>
+  </div>
+  <div class="panel">
+   <h2>Current Measurement</h2>
+   <div class="metric"><span>Total sounds</span><strong id="totalSounds">0</strong></div>
+   <div class="metric"><span>Total heartbeats</span><strong id="totalBeats">0</strong></div>
+   <div class="metric"><span>Last event</span><strong id="event">—</strong></div>
+   <div class="metric"><span>Last update</span><strong id="updated">—</strong></div>
+   
+   <div class="metric"><span>Original measured BPM</span><strong id="originalBpm">—</strong></div>
+   <div class="note">This is the original BPM calculated from successive S1 sounds by the ESP32. No reference value is used. The USB audio stream remains separate.</div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:15px">
+   <h2>BPM Trend</h2>
+   <canvas id="chart" width="1000" height="180"></canvas>
+ </section>
 </main>
-
-
 <script>
-
-/* =========================================================
-   ELEMENTS
-========================================================= */
-
-const terminal =
-    document.getElementById('terminal');
-
-const dot =
-    document.getElementById('dot');
-
-const connection =
-    document.getElementById('connection');
-
-
-/* =========================================================
-   API CONFIGURATION
-========================================================= */
-
-let API_BASE =
-    localStorage.getItem('heartMonitorApi')
-    || 'http://127.0.0.1:8080';
-
-const apiInput =
-    document.getElementById('apiBase');
-
-apiInput.value =
-    API_BASE.replace(/\/$/,'');
-
-
-function api(path){
-
-    return API_BASE.replace(/\/$/,'') + path;
-
-}
-
-
-/* =========================================================
-   CONNECT BUTTON
-========================================================= */
-
-document.getElementById('connectBtn').onclick = () => {
-
-    API_BASE =
-        apiInput.value.trim().replace(/\/$/,'')
-        || 'http://127.0.0.1:8080';
-
-    localStorage.setItem(
-        'heartMonitorApi',
-        API_BASE
-    );
-
-    poll();
-
+const terminal=document.getElementById('terminal'), dot=document.getElementById('dot'), connection=document.getElementById('connection');
+let API_BASE=localStorage.getItem('heartMonitorApi') || 'http://127.0.0.1:8080';
+const apiInput=document.getElementById('apiBase');
+apiInput.value=API_BASE.replace(/\/$/,'');
+function api(path){return API_BASE.replace(/\/$/,'')+path;}
+document.getElementById('connectBtn').onclick=()=>{
+ API_BASE=apiInput.value.trim().replace(/\/$/,'') || 'http://127.0.0.1:8080';
+ localStorage.setItem('heartMonitorApi',API_BASE);
+ poll();
 };
-
-
-/* =========================================================
-   STATE
-========================================================= */
-
-let state = {
-
-    bpm:null,
-
-    beats:0,
-
-    sounds:0,
-
-    gap:null,
-
-    totalSounds:0,
-
-    totalBeats:0,
-
-    event:null,
-
-    diff:null,
-
-    updated:null
-
-};
-
-
-let history = [];
-
-
-/* =========================================================
-   SET HTML VALUE
-========================================================= */
-
-function set(id,value){
-
-    const element =
-        document.getElementById(id);
-
-    if(element){
-
-        element.textContent = value;
-
-    }
-
-}
-
-
-/* =========================================================
-   RENDER
-========================================================= */
-
+let state={bpm:null,beats:0,sounds:0,gap:null,totalSounds:0,totalBeats:0,event:null,diff:null,updated:null};
+let lastBpmTimestamp=null;
+let history=[];
+function set(id,v){document.getElementById(id).textContent=v}
 function render(){
-
-    /*
-       ORIGINAL BPM
-
-       This value comes from:
-
-       ESP32
-          ↓
-       Bluetooth
-          ↓
-       Python bridge
-          ↓
-       /api/state
-          ↓
-       state.bpm
-    */
-
-    set(
-        'bpm',
-        state.bpm == null
-            ? '-- BPM'
-            : state.bpm.toFixed(1) + ' BPM'
-    );
-
-
-    set(
-        'beats',
-        state.beats
-    );
-
-
-    set(
-        'sounds',
-        state.sounds
-    );
-
-
-    set(
-        'gap',
-        state.gap == null
-            ? '-- ms'
-            : state.gap + ' ms'
-    );
-
-
-    set(
-        'totalSounds',
-        state.totalSounds
-    );
-
-
-    set(
-        'totalBeats',
-        state.totalBeats
-    );
-
-
-    set(
-        'event',
-        state.event || '—'
-    );
-
-
-    set(
-        'updated',
-        state.updated
-            ? new Date(
-                state.updated
-              ).toLocaleTimeString()
-            : '—'
-    );
-
-
-    /*
-       ORIGINAL MEASURED BPM
-    */
-
-    set(
-        'originalBpm',
-        state.bpm == null
-            ? '—'
-            : state.bpm.toFixed(1) + ' BPM'
-    );
-
-
-    /*
-       BPM CARD COLOR
-    */
-
-    document.getElementById('bpm').className =
-        'value bpm' +
-        (state.bpm != null ? ' good' : '');
-
-
-    draw();
-
+ set('bpm',state.bpm==null?'-- BPM':state.bpm.toFixed(1)+' BPM');
+ set('beats',state.beats);set('sounds',state.sounds);
+ set('gap',state.gap==null?'-- ms':state.gap+' ms');
+ set('totalSounds',state.totalSounds);set('totalBeats',state.totalBeats);
+ set('event',state.event||'—');set('updated',state.updated?new Date(state.updated).toLocaleTimeString():'—');
+ set('originalBpm',state.bpm==null?'—':state.bpm.toFixed(1)+' BPM');
+ document.getElementById('bpm').className='value bpm'+(state.bpm!=null?' good':'');
+ draw();
 }
-
-
-/* =========================================================
-   ADD BLUETOOTH TERMINAL LINE
-========================================================= */
-
 function addLine(line){
-
-    if(!line){
-        return;
-    }
-
-
-    if(
-        terminal.textContent ===
-        'Waiting for Bluetooth bridge…'
-    ){
-
-        terminal.textContent = '';
-
-    }
-
-
-    const time =
-        new Date().toLocaleTimeString();
-
-
-    terminal.textContent +=
-        '[' + time + '] ' +
-        line +
-        '\n';
-
-
-    terminal.scrollTop =
-        terminal.scrollHeight;
-
+ if(!line)return;
+ if(terminal.textContent==='Waiting for Bluetooth bridge…') terminal.textContent='';
+ const t=new Date().toLocaleTimeString();
+ terminal.textContent+='['+t+'] '+line+'\n'; terminal.scrollTop=terminal.scrollHeight;
 }
-
-
-/* =========================================================
-   PARSE BLUETOOTH LINE
-========================================================= */
-
 function parseLine(line){
-
-    addLine(line);
-
-    let m;
-
-
-    /*
-       S1-S2 GAP
-    */
-
-    if(
-        (m = line.match(
-            /S1-S2 gap\s*=\s*(\d+)\s*ms/i
-        ))
-    ){
-
-        state.gap =
-            Number(m[1]);
-
-        state.event =
-            'S2 detected';
-
-    }
-
-
-    /*
-       HEARTBEAT NUMBER
-    */
-
-    if(
-        (m = line.match(
-            /Heartbeat #\s*(\d+)/i
-        ))
-    ){
-
-        state.totalBeats =
-            Number(m[1]);
-
-        state.event =
-            'Heartbeat detected';
-
-    }
-
-
-    /*
-       SOUND NUMBER
-    */
-
-    if(
-        (m = line.match(
-            /Sound #\s*(\d+)/i
-        ))
-    ){
-
-        state.totalSounds =
-            Number(m[1]);
-
-    }
-
-
-    /*
-       TOTAL SOUNDS
-    */
-
-    if(
-        (m = line.match(
-            /Total sounds\s*=\s*(\d+)/i
-        ))
-    ){
-
-        state.sounds =
-            Number(m[1]);
-
-    }
-
-
-    /*
-       S1-S2 PAIRS
-    */
-
-    if(
-        (m = line.match(
-            /S1-S2 pairs\s*=\s*(\d+)/i
-        ))
-    ){
-
-        state.beats =
-            Number(m[1]);
-
-    }
-
-
-    /*
-       ORIGINAL BPM FROM ESP32
-    */
-
-    if(
-        (m = line.match(
-            /^BPM\s*=\s*(\d+(?:\.\d+)?)\s*$/i
-        ))
-    ){
-
-        const measured =
-            Number(m[1]);
-
-
-        if(
-            Number.isFinite(measured)
-        ){
-
-            /*
-               Store the actual measured BPM.
-               No 72 BPM reference is used.
-            */
-
-            state.bpm =
-                measured;
-
-
-            /*
-               BPM TREND
-            */
-
-            history.push(measured);
-
-
-            if(history.length > 40){
-
-                history.shift();
-
-            }
-
-
-            state.updated =
-                Date.now();
-
-        }
-
-    }
-
-
-    /*
-       Difference may still arrive from
-       older ESP32 firmware, but it is
-       NOT displayed as the BPM.
-    */
-
-    if(
-        (m = line.match(
-            /Difference\s*=\s*([+-]?[\d.]+)/i
-        ))
-    ){
-
-        state.diff =
-            Number(m[1]);
-
-    }
-
-
-    render();
-
+ addLine(line);
+ let m;
+ if((m=line.match(/S1-S2 gap\s*=\s*(\d+)\s*ms/i))) {state.gap=Number(m[1]);state.event='S2 detected'}
+ if((m=line.match(/Heartbeat #\s*(\d+)/i))) {state.totalBeats=Number(m[1]);state.event='Heartbeat detected'}
+ if((m=line.match(/Sound #\s*(\d+)/i))) state.totalSounds=Number(m[1]);
+ if((m=line.match(/Total sounds\s*=\s*(\d+)/i))) state.sounds=Number(m[1]);
+ if((m=line.match(/S1-S2 pairs\s*=\s*(\d+)/i))) state.beats=Number(m[1]);
+ if((m=line.match(/^BPM\s*=\s*(\d+(?:\.\d+)?)\s*$/i))) {
+  const measured=Number(m[1]);
+  if(Number.isFinite(measured)) {
+    state.bpm=measured;
+    history.push(measured);
+    if(history.length>40) history.shift();
+    state.updated=Date.now();
+    lastBpmTimestamp=state.updated;
+  }
 }
-
-
-/* =========================================================
-   POLL BRIDGE
-========================================================= */
-
+ if((m=line.match(/Difference\s*=\s*([+-]?[\d.]+)/i))) state.diff=Number(m[1]);
+ render();
+}
 async function poll(){
-
-    try{
-
-        const response =
-            await fetch(
-                api(
-                    '/api/state?ts=' +
-                    Date.now()
-                ),
-                {
-                    cache:'no-store'
-                }
-            );
-
-
-        if(!response.ok){
-
-            throw new Error(
-                'Bridge response error'
-            );
-
-        }
-
-
-        const data =
-            await response.json();
-
-
-        /*
-           CONNECTION OK
-        */
-
-        dot.classList.add('ok');
-
-        connection.textContent =
-            'Bluetooth bridge connected';
-
-
-        /*
-           LIVE BLUETOOTH LINES
-        */
-
-        if(data.lines){
-
-            data.lines.forEach(
-                parseLine
-            );
-
-        }
-
-
-        /*
-           SERVER STATE
-        */
-
-        if(data.state){
-
-            const serverBpm =
-                data.state.bpm;
-
-
-            state = {
-                ...state,
-                ...data.state
-            };
-
-
-            /*
-               Only a real numeric BPM
-               is accepted.
-            */
-
-            if(
-                typeof serverBpm !== 'number' ||
-                !Number.isFinite(serverBpm)
-            ){
-
-                state.bpm = null;
-
-            }
-
-
-            render();
-
-        }
-
+ try{
+  const r=await fetch(api('/api/state?ts='+Date.now()),{cache:'no-store'});
+  if(!r.ok)throw new Error();
+  const d=await r.json(); dot.classList.add('ok');connection.textContent='Bluetooth bridge connected';
+  if(d.lines) d.lines.forEach(parseLine);
+  if(d.state){
+    const serverBpm=d.state.bpm;
+    state={...state,...d.state};
+    // Only a numeric BPM received from the ESP32 is a measured BPM.
+    if(typeof serverBpm!=="number" || !Number.isFinite(serverBpm)) {
+      state.bpm=null;
     }
-
-    catch(error){
-
-        dot.classList.remove('ok');
-
-        connection.textContent =
-            'Bridge offline';
-
-    }
-
+    render();
+  }
+ }catch(e){dot.classList.remove('ok');connection.textContent='Bridge offline'}
 }
-
-
-/* =========================================================
-   CLEAR TERMINAL
-========================================================= */
-
-document.getElementById('clear').onclick =
-    () => {
-
-        terminal.textContent = '';
-
-    };
-
-
-/* =========================================================
-   BPM GRAPH
-========================================================= */
-
+document.getElementById('clear').onclick=()=>terminal.textContent='';
 function draw(){
-
-    const canvas =
-        document.getElementById('chart');
-
-    const x =
-        canvas.getContext('2d');
-
-    const w =
-        canvas.width;
-
-    const h =
-        canvas.height;
-
-
-    x.clearRect(
-        0,
-        0,
-        w,
-        h
-    );
-
-
-    /*
-       GRID
-    */
-
-    x.strokeStyle =
-        '#243747';
-
-    x.lineWidth = 1;
-
-
-    for(let i=0;i<5;i++){
-
-        const y =
-            20 +
-            i * (h - 40) / 4;
-
-
-        x.beginPath();
-
-        x.moveTo(
-            0,
-            y
-        );
-
-        x.lineTo(
-            w,
-            y
-        );
-
-        x.stroke();
-
-    }
-
-
-    /*
-       NEED AT LEAST
-       TWO BPM VALUES
-    */
-
-    if(history.length < 2){
-
-        return;
-
-    }
-
-
-    /*
-       BPM LINE
-    */
-
-    x.strokeStyle =
-        '#38d39f';
-
-    x.lineWidth = 2;
-
-    x.beginPath();
-
-
-    history.forEach(
-        (value,index) => {
-
-            const min = 40;
-
-            const max = 180;
-
-
-            const px =
-                index *
-                (w - 30) /
-                (history.length - 1)
-                + 15;
-
-
-            const clamped =
-                Math.max(
-                    min,
-                    Math.min(
-                        max,
-                        value
-                    )
-                );
-
-
-            const py =
-                h -
-                20 -
-                (
-                    clamped - min
-                ) *
-                (h - 40) /
-                (max - min);
-
-
-            if(index){
-
-                x.lineTo(
-                    px,
-                    py
-                );
-
-            }
-            else{
-
-                x.moveTo(
-                    px,
-                    py
-                );
-
-            }
-
-        }
-    );
-
-
-    x.stroke();
-
+ const c=document.getElementById('chart'),x=c.getContext('2d'),w=c.width,h=c.height;x.clearRect(0,0,w,h);
+ x.strokeStyle='#243747';x.lineWidth=1;
+ for(let i=0;i<5;i++){let y=20+i*(h-40)/4;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}
+ if(history.length<2)return;
+ x.strokeStyle='#38d39f';x.lineWidth=2;x.beginPath();
+ history.forEach((v,i)=>{let min=40,max=180;let px=i*(w-30)/(history.length-1)+15;let py=h-20-(Math.max(min,Math.min(max,v))-min)*(h-40)/(max-min);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
 }
-
-
-/* =========================================================
-   START
-========================================================= */
-
-render();
-
-setInterval(
-    poll,
-    500
-);
-
-poll();
-
+render();setInterval(poll,500);poll();
 </script>
-
 </body>
 </html>
