@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ESP32 Heart Sound Monitor</title>
+<style>
+:root{--bg:#081018;--panel:#101c28;--panel2:#142536;--text:#eef5fb;--muted:#91a5b7;--accent:#38d39f;--danger:#ff6176;--line:#243747}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#071019,#0c1721);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+header{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:14px}.heart{font-size:34px}.title{font-size:23px;font-weight:700}.subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.status{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1px solid var(--line);border-radius:20px;background:#0c1822;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--danger)}.dot.ok{background:var(--accent);box-shadow:0 0 12px #38d39f}
+main{max-width:1250px;margin:0 auto;padding:25px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:rgba(16,28,40,.92);border:1px solid var(--line);border-radius:15px;padding:20px;min-height:125px}
+.label{color:var(--muted);font-size:13px}.value{font-size:37px;font-weight:750;margin-top:13px;letter-spacing:-1px}.unit{font-size:14px;color:var(--muted);font-weight:500}
+.bpm{font-size:52px}.bpm.good{color:var(--accent)}
+.grid{display:grid;grid-template-columns:1.45fr .9fr;gap:15px;margin-top:15px}.panel{background:rgba(16,28,40,.92);border:1px solid var(--line);border-radius:15px;padding:20px}
+.panel h2{font-size:16px;margin:0 0 14px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0}.metric:last-child{border:0}
+.terminal{height:355px;overflow:auto;background:#071019;border-radius:10px;border:1px solid #1b2a37;padding:13px;font-family:Consolas,monospace;font-size:13px;line-height:1.65;white-space:pre-wrap}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}button{border:1px solid var(--line);background:#172736;color:var(--text);padding:10px 15px;border-radius:9px;cursor:pointer}button:hover{background:#203648}
+canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px solid #1b2a37}
+.note{margin-top:15px;color:var(--muted);font-size:12px;line-height:1.5}.pill{display:inline-block;padding:4px 8px;border-radius:8px;background:#173328;color:#8ce6c5;font-size:11px}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:520px){header{padding:18px}.cards{grid-template-columns:1fr}main{padding:15px}.value{font-size:31px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand"><div class="heart">♥</div><div><div class="title">ESP32 Heart Sound Monitor</div><div class="subtitle">Bluetooth Classic • S1/S2 detection • 5-second BPM</div></div></div>
+ <div class="status"><span id="dot" class="dot"></span><span id="connection">Bridge offline</span></div>
+</header>
+<main>
+ <section class="cards">
+  <div class="card"><div class="label">HEART RATE</div><div id="bpm" class="value bpm">-- <span class="unit">BPM</span></div></div>
+  <div class="card"><div class="label">HEARTBEATS / 5 SEC</div><div id="beats" class="value">0</div></div>
+  <div class="card"><div class="label">SOUNDS / 5 SEC</div><div id="sounds" class="value">0</div></div>
+  <div class="card"><div class="label">S1 / S2 GAP</div><div id="gap" class="value">-- <span class="unit">ms</span></div></div>
+ </section>
+ <section class="grid">
+  <div class="panel">
+   <h2>Live Bluetooth Messages</h2>
+   <div class="controls"><button id="clear">Clear terminal</button><span class="pill">ESP32-HEART</span></div>
+   <div id="terminal" class="terminal">Waiting for Bluetooth bridge…</div>
+  </div>
+  <div class="panel">
+   <h2>Current Measurement</h2>
+   <div class="metric"><span>Total sounds</span><strong id="totalSounds">0</strong></div>
+   <div class="metric"><span>Total heartbeats</span><strong id="totalBeats">0</strong></div>
+   <div class="metric"><span>Last event</span><strong id="event">—</strong></div>
+   <div class="metric"><span>Last update</span><strong id="updated">—</strong></div>
+   <div class="metric"><span>Reference BPM</span><strong>72</strong></div>
+   <div class="metric"><span>Difference</span><strong id="diff">—</strong></div>
+   <div class="note">The dashboard displays the text messages sent by your ESP32 BluetoothSerial program. The USB audio stream remains separate.</div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:15px">
+   <h2>BPM Trend</h2>
+   <canvas id="chart" width="1000" height="180"></canvas>
+ </section>
+</main>
+<script>
+const terminal=document.getElementById('terminal'), dot=document.getElementById('dot'), connection=document.getElementById('connection');
+let state={bpm:null,beats:0,sounds:0,gap:null,totalSounds:0,totalBeats:0,event:null,diff:null,updated:null};
+let history=[];
+function set(id,v){document.getElementById(id).textContent=v}
+function render(){
+ set('bpm',state.bpm==null?'-- BPM':state.bpm.toFixed(1)+' BPM');
+ set('beats',state.beats);set('sounds',state.sounds);
+ set('gap',state.gap==null?'-- ms':state.gap+' ms');
+ set('totalSounds',state.totalSounds);set('totalBeats',state.totalBeats);
+ set('event',state.event||'—');set('updated',state.updated?new Date(state.updated).toLocaleTimeString():'—');
+ set('diff',state.diff==null?'—':(state.diff>0?'+':'')+state.diff.toFixed(1)+' BPM');
+ document.getElementById('bpm').className='value bpm'+(state.bpm!=null?' good':'');
+ draw();
+}
+function addLine(line){
+ if(!line)return;
+ if(terminal.textContent==='Waiting for Bluetooth bridge…') terminal.textContent='';
+ const t=new Date().toLocaleTimeString();
+ terminal.textContent+='['+t+'] '+line+'\n'; terminal.scrollTop=terminal.scrollHeight;
+}
+function parseLine(line){
+ addLine(line);
+ let m;
+ if((m=line.match(/S1-S2 gap\s*=\s*(\d+)\s*ms/i))) {state.gap=Number(m[1]);state.event='S2 detected'}
+ if((m=line.match(/Heartbeat #\s*(\d+)/i))) {state.totalBeats=Number(m[1]);state.event='Heartbeat detected'}
+ if((m=line.match(/Sound #\s*(\d+)/i))) state.totalSounds=Number(m[1]);
+ if((m=line.match(/Total sounds\s*=\s*(\d+)/i))) state.sounds=Number(m[1]);
+ if((m=line.match(/S1-S2 pairs\s*=\s*(\d+)/i))) state.beats=Number(m[1]);
+ if((m=line.match(/BPM\s*=\s*([\d.]+)/i))) {state.bpm=Number(m[1]);history.push(state.bpm);if(history.length>40)history.shift();state.updated=Date.now()}
+ if((m=line.match(/Difference\s*=\s*([+-]?[\d.]+)/i))) state.diff=Number(m[1]);
+ render();
+}
+async function poll(){
+ try{
+  const r=await fetch('/api/state?ts='+Date.now(),{cache:'no-store'});
+  if(!r.ok)throw new Error();
+  const d=await r.json(); dot.classList.add('ok');connection.textContent='Bluetooth bridge connected';
+  if(d.lines) d.lines.forEach(parseLine);
+  if(d.state){state={...state,...d.state};render()}
+ }catch(e){dot.classList.remove('ok');connection.textContent='Bridge offline'}
+}
+document.getElementById('clear').onclick=()=>terminal.textContent='';
+function draw(){
+ const c=document.getElementById('chart'),x=c.getContext('2d'),w=c.width,h=c.height;x.clearRect(0,0,w,h);
+ x.strokeStyle='#243747';x.lineWidth=1;
+ for(let i=0;i<5;i++){let y=20+i*(h-40)/4;x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke()}
+ if(history.length<2)return;
+ x.strokeStyle='#38d39f';x.lineWidth=2;x.beginPath();
+ history.forEach((v,i)=>{let min=40,max=180;let px=i*(w-30)/(history.length-1)+15;let py=h-20-(Math.max(min,Math.min(max,v))-min)*(h-40)/(max-min);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
+}
+render();setInterval(poll,500);poll();
+</script>
+</body>
+</html>
