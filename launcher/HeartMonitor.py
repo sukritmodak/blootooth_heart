@@ -8,7 +8,7 @@ from tkinter import messagebox
 
 import serial.tools.list_ports
 
-import heart_bridge
+# The Bluetooth bridge lives in ../bridge in the repository.\nBRIDGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "bridge"))\nif BRIDGE_DIR not in sys.path:\n    sys.path.insert(0, BRIDGE_DIR)\nimport heart_bridge
 
 APP_TITLE = "ESP32 Heart Monitor"
 DASHBOARD = "http://127.0.0.1:8080"
