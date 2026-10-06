@@ -27,7 +27,7 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
 </head>
 <body>
 <header>
- <div class="brand"><div class="heart">♥</div><div><div class="title">ESP32 Heart Sound Monitor</div><div class="subtitle">Bluetooth Classic • S1/S2 detection • 5-second BPM</div></div></div>
+ <div class="brand"><div class="heart">♥</div><div><div class="title">ESP32 Heart Sound Monitor</div><div class="subtitle">Bluetooth Classic • S1/S2 detection • Original S1-to-S1 BPM</div></div></div>
  <div class="status"><span id="dot" class="dot"></span><span id="connection">Bridge offline</span></div>
 </header>
 <main>
@@ -57,9 +57,9 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
    <div class="metric"><span>Total heartbeats</span><strong id="totalBeats">0</strong></div>
    <div class="metric"><span>Last event</span><strong id="event">—</strong></div>
    <div class="metric"><span>Last update</span><strong id="updated">—</strong></div>
-   <div class="metric"><span>Reference BPM</span><strong>72</strong></div>
-   <div class="metric"><span>Difference</span><strong id="diff">—</strong></div>
-   <div class="note">Measured BPM is taken only from the ESP32 line “BPM = ...” sent after each 5-second calculation. The 72 BPM value below is reference-only and never used as the measured heart rate. The USB audio stream remains separate.</div>
+   
+   <div class="metric"><span>Original measured BPM</span><strong id="originalBpm">—</strong></div>
+   <div class="note">This is the original BPM calculated from successive S1 sounds by the ESP32. No reference value is used. The USB audio stream remains separate.</div>
   </div>
  </section>
  <section class="panel" style="margin-top:15px">
@@ -88,7 +88,7 @@ function render(){
  set('gap',state.gap==null?'-- ms':state.gap+' ms');
  set('totalSounds',state.totalSounds);set('totalBeats',state.totalBeats);
  set('event',state.event||'—');set('updated',state.updated?new Date(state.updated).toLocaleTimeString():'—');
- set('diff',state.diff==null?'—':(state.diff>0?'+':'')+state.diff.toFixed(1)+' BPM');
+ set('originalBpm',state.bpm==null?'—':state.bpm.toFixed(1)+' BPM');
  document.getElementById('bpm').className='value bpm'+(state.bpm!=null?' good':'');
  draw();
 }
