@@ -32,7 +32,7 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
 </header>
 <main>
  <section class="cards">
-  <div class="card"><div class="label">HEART RATE</div><div id="bpm" class="value bpm">-- <span class="unit">BPM</span></div></div>
+  <div class="card"><div class="label">MEASURED HEART RATE</div><div id="bpm" class="value bpm">-- <span class="unit">BPM</span></div></div>
   <div class="card"><div class="label">HEARTBEATS / 5 SEC</div><div id="beats" class="value">0</div></div>
   <div class="card"><div class="label">SOUNDS / 5 SEC</div><div id="sounds" class="value">0</div></div>
   <div class="card"><div class="label">S1 / S2 GAP</div><div id="gap" class="value">-- <span class="unit">ms</span></div></div>
@@ -51,7 +51,7 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
    <div class="metric"><span>Last update</span><strong id="updated">—</strong></div>
    <div class="metric"><span>Reference BPM</span><strong>72</strong></div>
    <div class="metric"><span>Difference</span><strong id="diff">—</strong></div>
-   <div class="note">The dashboard displays the text messages sent by your ESP32 BluetoothSerial program. The USB audio stream remains separate.</div>
+   <div class="note">Measured BPM is taken only from the ESP32 line “BPM = ...” sent after each 5-second calculation. The 72 BPM value below is reference-only and never used as the measured heart rate. The USB audio stream remains separate.</div>
   </div>
  </section>
  <section class="panel" style="margin-top:15px">
@@ -88,7 +88,7 @@ function parseLine(line){
  if((m=line.match(/Sound #\s*(\d+)/i))) state.totalSounds=Number(m[1]);
  if((m=line.match(/Total sounds\s*=\s*(\d+)/i))) state.sounds=Number(m[1]);
  if((m=line.match(/S1-S2 pairs\s*=\s*(\d+)/i))) state.beats=Number(m[1]);
- if((m=line.match(/BPM\s*=\s*([\d.]+)/i))) {state.bpm=Number(m[1]);history.push(state.bpm);if(history.length>40)history.shift();state.updated=Date.now()}
+ if((m=line.match(/^BPM\s*=\s*([\d.]+)\s*$/i))) {state.bpm=Number(m[1]);history.push(state.bpm);if(history.length>40)history.shift();state.updated=Date.now()}
  if((m=line.match(/Difference\s*=\s*([+-]?[\d.]+)/i))) state.diff=Number(m[1]);
  render();
 }
