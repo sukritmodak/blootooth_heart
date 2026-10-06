@@ -1,126 +1,104 @@
 # ESP32 Bluetooth Heart Sound Monitor
 
-A browser dashboard for the ESP32 program using **BluetoothSerial / Bluetooth Classic**.
+A responsive web dashboard for the ESP32 Bluetooth Classic SPP heart-sound monitor.
 
-## Important
+## Architecture
 
-The ESP32 code in this project uses Bluetooth Classic SPP:
+The ESP32 uses Bluetooth Classic, so the hosted website does not connect directly to the ESP32.
 
-`SerialBT.begin("ESP32-HEART")`
+ESP32 → Bluetooth Classic → Windows Bluetooth COM port → Heart Monitor bridge → Web dashboard
 
-A normal Chrome/GitHub Pages website cannot directly open a Bluetooth Classic SPP connection. Therefore this project uses a small **Python Bluetooth bridge**:
+The dashboard itself can be hosted on any static web platform. The bridge runs on the Windows computer that has the ESP32 Bluetooth connection.
 
-**ESP32 → Bluetooth Classic SPP → Windows Bluetooth COM port → Python bridge → local web dashboard**
+## Website
 
-This is much more reliable than pretending that Web Bluetooth can read Bluetooth Classic SPP.
+index.html is hosting-ready.
+
+After uploading it to your external hosting platform, open the hosted URL. In Live Data Source, enter:
+
+http://127.0.0.1:8080
+
+when the Heart Monitor bridge is running on the same computer.
+
+If the bridge is available at another HTTP address, enter that address instead. The selected address is saved in the browser.
 
 ## What the dashboard shows
 
-- Live S1 detected messages
-- Live S2 detected messages
-- S1–S2 gap in milliseconds
-- Heartbeat number
+- Actual ESP32 5-second BPM
+- Heartbeats / 5 seconds
+- Sounds / 5 seconds
+- S1-S2 gap
 - Total sounds
 - Total heartbeats
-- 5-second BPM
-- Difference from the ESP32 reference of 72 BPM
+- Last detected event
+- Difference from the ESP32 reference value of 72 BPM
+- Live Bluetooth messages
 - BPM trend graph
-- Bluetooth/bridge connection status
+- Bridge connection status
 
-## 1. Pair the ESP32
+Important: the dashboard does not replace the ESP32 BPM calculation and does not force the display to 72 BPM. It displays the numeric BPM = ... result received from the ESP32.
 
-Upload your ESP32 sketch and power the board.
+## Windows one-click application
 
-The Bluetooth device should appear as:
+The repository includes a Windows launcher at launcher/HeartMonitor.py and a GitHub Actions workflow at .github/workflows/build-heart-monitor.yml.
 
-`ESP32-HEART`
+The workflow builds HeartMonitor.exe. The EXE is intended to be the user-facing launcher: double-click it, and it starts the bridge and opens the dashboard automatically.
 
-Pair it with Windows.
+## Bluetooth setup
 
-## 2. Find the Bluetooth COM port
+1. Upload the ESP32 sketch.
+2. Power the ESP32.
+3. Pair ESP32-HEART with Windows.
+4. Windows creates a Bluetooth SPP COM port.
+5. Start HeartMonitor.exe.
 
-On Windows:
+The launcher attempts to identify the Bluetooth COM port automatically.
 
-**Settings → Bluetooth & devices → Devices → More Bluetooth settings → COM Ports**
+If Windows has no usable Bluetooth SPP COM port, the hardware connection still needs to be repaired in Windows first.
 
-Find the **outgoing** COM port associated with ESP32-HEART.
+## External hosting
 
-Example:
+You can upload only index.html to most static hosting platforms for the visual website.
 
-`COM7`
+For live ESP32 data, the Windows computer running the Bluetooth bridge must remain available and reachable by the browser.
 
-Do not automatically assume COM7; your computer may assign another port.
+### HTTPS hosting note
 
-## 3. Install the bridge
+If your hosting platform serves the site over HTTPS, the browser may apply secure-content restrictions when connecting to a local HTTP bridge. If that happens, use a secure/reverse-proxied API endpoint for the bridge or host the dashboard through the local bridge itself.
 
-Install Python 3, then open a terminal in the repository:
+## ESP32 message format
 
-```bash
-python -m pip install -r bridge/requirements.txt
-```
+The bridge understands:
 
-## 4. Start the dashboard
+- S1 detected
+- S2 detected
+- S1-S2 gap = XXX ms
+- Heartbeat #N
+- Total sounds = N
+- S1-S2 pairs = N
+- BPM = XX.X
+- Difference = X.X
 
-Replace COM7 with your actual Bluetooth COM port:
+## Current BPM calculation
 
-```bash
-python bridge/heart_bridge.py COM7
-```
+The current ESP32 sketch calculates: BPM = number of S1-S2 pairs in 5 seconds × 12.
 
-You should see:
+The website displays that result exactly as received.
 
-```
-ESP32 Heart Sound Monitor
-Bluetooth port: COM7
-Dashboard: http://127.0.0.1:8080
-```
+For a physiologically stronger implementation, BPM should eventually be derived from successive S1-to-S1 intervals with artifact rejection.
 
-Open:
+## USB audio
 
-**http://127.0.0.1:8080**
+The ESP32 also sends a separate binary USB audio stream: A5 5A 80 [128 audio bytes] CHECKSUM.
 
-The dashboard will begin displaying the ESP32 Bluetooth messages.
+This is intentionally separate from the Bluetooth text data.
 
-## 5. ESP32 message format
+## Repository files
 
-The bridge understands messages generated by your sketch, including:
+- index.html — responsive, externally hostable dashboard
+- bridge/heart_bridge.py — Bluetooth Classic to HTTP bridge
+- bridge/requirements.txt — Python dependency
+- launcher/HeartMonitor.py — one-click Windows launcher source
+- .github/workflows/build-heart-monitor.yml — Windows EXE build workflow
 
-- `S1 detected`
-- `S2 detected`
-- `S1-S2 gap = XXX ms`
-- `Heartbeat #N`
-- `Total sounds = N`
-- `S1-S2 pairs = N`
-- `BPM = XX.X`
-- `Difference = X.X`
-
-## About the USB audio packet
-
-Your ESP32 also sends binary audio through USB Serial:
-
-`A5 5A 80 [128 audio bytes] CHECKSUM`
-
-That stream is intentionally **not** mixed with the Bluetooth text stream. The Bluetooth bridge reads only the BluetoothSerial connection.
-
-## Important measurement note
-
-Your current ESP32 sketch calculates:
-
-`BPM = number of S1-S2 pairs in 5 seconds × 12`
-
-This can display useful demonstration values, but it is not the most physiologically robust BPM algorithm. For a real heart-rate measurement, BPM should preferably be derived from the interval between successive complete heartbeats (for example S1-to-S1), with artifact rejection.
-
-This repository currently displays the values exactly as produced by your ESP32 code.
-
-## Files
-
-- `index.html` — responsive live dashboard
-- `bridge/heart_bridge.py` — Bluetooth Classic → HTTP bridge
-- `bridge/requirements.txt` — Python dependency
-
-## GitHub Pages
-
-GitHub Pages can host the visual dashboard as a static demo, but it cannot by itself access the ESP32 Bluetooth Classic SPP connection. For live hardware data, run the local bridge and open its local dashboard URL.
-
-Repository:
-https://github.com/sukritmodak/blootooth_heart
+Repository: https://github.com/sukritmodak/blootooth_heart
