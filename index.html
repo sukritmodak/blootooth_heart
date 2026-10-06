@@ -18,11 +18,11 @@ main{max-width:1250px;margin:0 auto;padding:25px}
 .grid{display:grid;grid-template-columns:1.45fr .9fr;gap:15px;margin-top:15px}.panel{background:rgba(16,28,40,.92);border:1px solid var(--line);border-radius:15px;padding:20px}
 .panel h2{font-size:16px;margin:0 0 14px}.metric{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:11px 0}.metric:last-child{border:0}
 .terminal{height:355px;overflow:auto;background:#071019;border-radius:10px;border:1px solid #1b2a37;padding:13px;font-family:Consolas,monospace;font-size:13px;line-height:1.65;white-space:pre-wrap}
-.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}button{border:1px solid var(--line);background:#172736;color:var(--text);padding:10px 15px;border-radius:9px;cursor:pointer}button:hover{background:#203648}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.source-panel{margin-bottom:15px}.source-row{display:flex;gap:10px}.source-row input{flex:1;min-width:0;border:1px solid var(--line);background:#071019;color:var(--text);padding:11px 13px;border-radius:9px;font:inherit}button{border:1px solid var(--line);background:#172736;color:var(--text);padding:10px 15px;border-radius:9px;cursor:pointer}button:hover{background:#203648}
 canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px solid #1b2a37}
 .note{margin-top:15px;color:var(--muted);font-size:12px;line-height:1.5}.pill{display:inline-block;padding:4px 8px;border-radius:8px;background:#173328;color:#8ce6c5;font-size:11px}
 @media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
-@media(max-width:520px){header{padding:18px}.cards{grid-template-columns:1fr}main{padding:15px}.value{font-size:31px}}
+@media(max-width:520px){header{padding:18px}.cards{grid-template-columns:1fr}main{padding:15px}.value{font-size:31px}.source-row{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -31,6 +31,14 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
  <div class="status"><span id="dot" class="dot"></span><span id="connection">Bridge offline</span></div>
 </header>
 <main>
+ <section class="panel source-panel">
+  <h2>Live Data Source</h2>
+  <div class="source-row">
+    <input id="apiBase" aria-label="Bridge API URL" placeholder="http://127.0.0.1:8080">
+    <button id="connectBtn">Connect</button>
+  </div>
+  <div class="note">Hosted website mode: enter the URL of the computer running the Heart Monitor bridge. For the one-click Windows app, the default is <b>http://127.0.0.1:8080</b>.</div>
+ </section>
  <section class="cards">
   <div class="card"><div class="label">MEASURED HEART RATE</div><div id="bpm" class="value bpm">-- <span class="unit">BPM</span></div></div>
   <div class="card"><div class="label">HEARTBEATS / 5 SEC</div><div id="beats" class="value">0</div></div>
@@ -61,6 +69,15 @@ canvas{width:100%;height:180px;background:#071019;border-radius:10px;border:1px 
 </main>
 <script>
 const terminal=document.getElementById('terminal'), dot=document.getElementById('dot'), connection=document.getElementById('connection');
+let API_BASE=localStorage.getItem('heartMonitorApi') || 'http://127.0.0.1:8080';
+const apiInput=document.getElementById('apiBase');
+apiInput.value=API_BASE.replace(/\/$/,'');
+function api(path){return API_BASE.replace(/\/$/,'')+path;}
+document.getElementById('connectBtn').onclick=()=>{
+ API_BASE=apiInput.value.trim().replace(/\/$/,'') || 'http://127.0.0.1:8080';
+ localStorage.setItem('heartMonitorApi',API_BASE);
+ poll();
+};
 let state={bpm:null,beats:0,sounds:0,gap:null,totalSounds:0,totalBeats:0,event:null,diff:null,updated:null};
 let lastBpmTimestamp=null;
 let history=[];
@@ -104,7 +121,7 @@ function parseLine(line){
 }
 async function poll(){
  try{
-  const r=await fetch('/api/state?ts='+Date.now(),{cache:'no-store'});
+  const r=await fetch(api('/api/state?ts='+Date.now()),{cache:'no-store'});
   if(!r.ok)throw new Error();
   const d=await r.json(); dot.classList.add('ok');connection.textContent='Bluetooth bridge connected';
   if(d.lines) d.lines.forEach(parseLine);
